@@ -6,9 +6,11 @@ from django.utils.encoding import force_str
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.exceptions import TokenError
+
 
 from .serializers import RegistrationSerializer
-from .utils import build_login_response_data, set_auth_cookies
+from .utils import build_login_response_data, set_auth_cookies, blacklist_refresh_token, clear_auth_cookies
 
 class RegistrationView(generics.GenericAPIView):
     permission_classes = []
@@ -38,7 +40,7 @@ class ActivationView(generics.GenericAPIView):
             uid = urlsafe_base64_decode(force_str(uidb64)).decode()
             user = CustomUser.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
-            user = None    
+            user = None
         
         if user is not None and user.is_active:
             return Response({"error": "Account already activated."}, status=status.HTTP_400_BAD_REQUEST)
@@ -61,5 +63,28 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             response,
             serializer.validated_data['access'],
             serializer.validated_data['refresh'])
+
+        return response
+    
+class LogoutView(generics.GenericAPIView):
+    permission_classes = []
+
+    def post(self, request, *args, **kwargs):
+        refresh_token_string = request.COOKIES.get('refresh_token')
+
+        if not refresh_token_string:
+            return Response({"detail": "Refresh token not provided."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            blacklist_refresh_token(refresh_token_string)
+        except TokenError:
+            return Response({"detail": "Invalid refresh token."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        detail = "Logout successful! All Tokens will be deleted. Refresh token is now invalid."
+        response = Response({"detail": detail}, status=status.HTTP_200_OK)
+
+        clear_auth_cookies(response)
 
         return response
