@@ -5,8 +5,10 @@ from django.utils.encoding import force_str
 
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .serializers import RegistrationSerializer
+from .utils import build_login_response_data, set_auth_cookies
 
 class RegistrationView(generics.GenericAPIView):
     permission_classes = []
@@ -47,3 +49,17 @@ class ActivationView(generics.GenericAPIView):
             return Response({"message": "Account successfully activated."}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Account activation failed."}, status=status.HTTP_400_BAD_REQUEST)
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = build_login_response_data(serializer)
+        response = Response(data, status=status.HTTP_200_OK)
+        set_auth_cookies(
+            response,
+            serializer.validated_data['access'],
+            serializer.validated_data['refresh'])
+
+        return response
