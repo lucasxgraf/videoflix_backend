@@ -39,3 +39,18 @@ def blacklist_refresh_token(refresh_token_string):
 def clear_auth_cookies(response):
     response.delete_cookie('access_token')
     response.delete_cookie('refresh_token')
+    
+def generate_new_access_token(refresh_token_string):
+    refresh_token = RefreshToken(refresh_token_string)
+    new_access_token = str(refresh_token.access_token)
+    return new_access_token
+
+
+def set_access_cookie(response, new_access_token):
+    response.set_cookie(
+        key='access_token',
+        value=new_access_token,
+        httponly=True,
+        secure=True,
+        samesite='Lax'
+    )

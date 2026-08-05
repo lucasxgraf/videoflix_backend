@@ -10,7 +10,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 
 from .serializers import RegistrationSerializer
-from .utils import build_login_response_data, set_auth_cookies, blacklist_refresh_token, clear_auth_cookies
+from .utils import build_login_response_data, set_auth_cookies, blacklist_refresh_token, clear_auth_cookies, generate_new_access_token, set_access_cookie
 
 class RegistrationView(generics.GenericAPIView):
     permission_classes = []
@@ -87,4 +87,23 @@ class LogoutView(generics.GenericAPIView):
 
         clear_auth_cookies(response)
 
+        return response
+
+class CookieTokenRefreshView(generics.GenericAPIView):
+    permission_classes = []
+
+    def post(self, request, *args, **kwargs):
+        refresh_token_string = request.COOKIES.get('refresh_token')
+
+        if not refresh_token_string:
+            return Response({"detail": "Refresh token not provided."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        try:
+            new_access_token = generate_new_access_token(refresh_token_string)
+        except TokenError:
+            return Response({"detail": "Invalid refresh token."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        response = Response({"detail": "Token refreshed", "access": new_access_token}, status=status.HTTP_200_OK)
+        set_access_cookie(response, new_access_token)
         return response
