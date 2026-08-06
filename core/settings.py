@@ -157,6 +157,10 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS') == 'True'
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL') == 'True'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', default='noreply@videoflix.com')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', default='http://localhost:5500')
+BACKEND_URL = os.environ.get('BACKEND_URL', default='http://localhost:8000')
+
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
