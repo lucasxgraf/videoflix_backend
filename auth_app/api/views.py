@@ -11,13 +11,13 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 
 from auth_app.tasks import send_activation_email, send_password_reset_email
-from .serializers import RegistrationSerializer, PasswordResetSerializer
+from .serializers import RegistrationSerializer, PasswordResetSerializer, PasswordConfirmSerializer
 from .utils import build_login_response_data, set_auth_cookies, blacklist_refresh_token, clear_auth_cookies, generate_new_access_token, set_access_cookie
 
 class RegistrationView(generics.GenericAPIView):
     permission_classes = []
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         serializer = RegistrationSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -137,3 +137,24 @@ class PasswordResetView(generics.GenericAPIView):
             pass
         
         return Response({"detail": "An email has been sent to reset your password."}, status=status.HTTP_200_OK)
+
+class PasswordConfirmView(generics.GenericAPIView):
+    permission_classes = []
+    
+    def post(self, request, uidb64, token, *args, **kwargs):
+        CustomUser = get_user_model()
+        
+        try:
+            uid = urlsafe_base64_decode(force_str(uidb64)).decode()
+            user = CustomUser.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            user = None
+            
+        if user is not None and PasswordResetTokenGenerator().check_token(user, token):
+            serializer = PasswordConfirmSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({"detail": "Your Password has been successfully reset."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Password reset failed."}, status=status.HTTP_400_BAD_REQUEST)
