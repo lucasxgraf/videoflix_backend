@@ -7,7 +7,12 @@ from auth_app.tasks import send_activation_email, send_password_reset_email
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 class SendActivationEmailTest(TestCase):
     def setUp(self):
-        self.user = CustomUser.objects.create_user(email='user@example.com', password='securepassword')
+        self.user_data = {
+            'email': 'user@example.com',
+            'password': 'securepassword',
+        }
+                
+        self.user = CustomUser.objects.create_user(email=self.user_data['email'], password=self.user_data['password'])
 
     def test_sends_email_to_user(self):
         send_activation_email(self.user.id, 'some-uid', 'some-token')
@@ -24,7 +29,12 @@ class SendActivationEmailTest(TestCase):
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 class SendPasswordResetEmailTest(TestCase):
     def setUp(self):
-        self.user = CustomUser.objects.create_user(email='user@example.com', password='securepassword')
+        self.user_data = {
+            'email': 'user@example.com',
+            'password': 'securepassword',
+        }
+                
+        self.user = CustomUser.objects.create_user(email=self.user_data['email'], password=self.user_data['password'])
 
     def test_sends_reset_email_to_user(self):
         send_password_reset_email(self.user.id, 'some-uid', 'some-token')

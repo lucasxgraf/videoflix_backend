@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 from unittest.mock import patch
 
 from auth_app.models import CustomUser
-from auth_app.tasks import send_activation_email, send_password_reset_email
+from auth_app.tasks import send_activation_email
 
 class RegistrationTestCase(APITestCase):
     def setUp(self):

@@ -10,8 +10,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.exceptions import TokenError
 
 
-from auth_app.tasks import send_activation_email
-from .serializers import RegistrationSerializer
+from auth_app.tasks import send_activation_email, send_password_reset_email
+from .serializers import RegistrationSerializer, PasswordResetSerializer
 from .utils import build_login_response_data, set_auth_cookies, blacklist_refresh_token, clear_auth_cookies, generate_new_access_token, set_access_cookie
 
 class RegistrationView(generics.GenericAPIView):
@@ -113,3 +113,27 @@ class CookieTokenRefreshView(generics.GenericAPIView):
         response = Response({"detail": "Token refreshed", "access": new_access_token}, status=status.HTTP_200_OK)
         set_access_cookie(response, new_access_token)
         return response
+    
+class PasswordResetView(generics.GenericAPIView):
+    permission_classes = []
+    serializer_class = PasswordResetSerializer
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data['email']
+        CustomUser = get_user_model()
+        
+        try:
+            user = CustomUser.objects.get(email=email)
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+            token = PasswordResetTokenGenerator().make_token(user)
+            
+            queue = django_rq.get_queue('default')
+            queue.enqueue(send_password_reset_email, user.id, uidb64, token)
+            
+        except CustomUser.DoesNotExist:
+            pass
+        
+        return Response({"detail": "An email has been sent to reset your password."}, status=status.HTTP_200_OK)

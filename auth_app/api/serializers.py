@@ -22,7 +22,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return data
     
     def validate_email(self, value):
-        """Ensures the email is not already registered."""
         if CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError('Email already exists')
         return value
@@ -31,3 +30,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         validated_data.pop('confirmed_password')
         user = CustomUser.objects.create_user(**validated_data)
         return user
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
