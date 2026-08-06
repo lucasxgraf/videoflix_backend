@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import force_str, force_bytes
+import django_rq
 
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -9,6 +10,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.exceptions import TokenError
 
 
+from auth_app.tasks import send_activation_email
 from .serializers import RegistrationSerializer
 from .utils import build_login_response_data, set_auth_cookies, blacklist_refresh_token, clear_auth_cookies, generate_new_access_token, set_access_cookie
 
@@ -21,8 +23,12 @@ class RegistrationView(generics.GenericAPIView):
         if serializer.is_valid():
             serializer.save()
             user = serializer.instance
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             token = PasswordResetTokenGenerator().make_token(user)
-
+            
+            queue = django_rq.get_queue('default')
+            queue.enqueue(send_activation_email, user.id, uidb64, token)
+            
             return Response({"user": 
                 { "id": user.id, "email": user.email },
                 "token": token},

@@ -1,8 +1,15 @@
 from django.urls import reverse
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from unittest.mock import patch
+
 from auth_app.models import CustomUser
+from auth_app.tasks import send_activation_email, send_password_reset_email
 
 class RegistrationTestCase(APITestCase):
     def setUp(self):
@@ -53,3 +60,20 @@ class RegistrationTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(CustomUser.objects.count(), 0)
+        
+    @patch('auth_app.api.views.django_rq.get_queue')
+    def test_registration_enqueues_activation_email(self, mock_get_queue):
+        mock_queue = mock_get_queue.return_value
+        response = self.client.post(self.url, self.user_data, format='json')
+
+        user = CustomUser.objects.get()
+        expected_uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        expected_token = PasswordResetTokenGenerator().make_token(user)
+
+        mock_queue.enqueue.assert_called_once()
+        args = mock_queue.enqueue.call_args[0]
+
+        self.assertEqual(args[0], send_activation_email)
+        self.assertEqual(args[1], user.id)
+        self.assertEqual(args[2], expected_uidb64)
+        self.assertEqual(args[3], expected_token)
