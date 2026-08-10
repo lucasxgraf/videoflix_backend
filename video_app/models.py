@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Video(models.Model):
     class Category(models.TextChoices):
         ACTION = 'action', 'Action'
@@ -10,13 +11,13 @@ class Video(models.Model):
         SCI_FI = 'sci-fi', 'Sci-Fi'
         DOCUMENTARY = 'documentary', 'Documentary'
         ANIMATION = 'animation', 'Animation'
-    
+
     class ProcessingStatus(models.TextChoices):
         PENDING = 'pending', 'Pending'
         PROCESSING = 'processing', 'Processing'
         DONE = 'done', 'Done'
         FAILED = 'failed', 'Failed'
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -25,7 +26,10 @@ class Video(models.Model):
     category = models.CharField(max_length=20, choices=Category.choices)
     original_video_file = models.FileField(
         upload_to='videos/')
-    processing_status = models.CharField(max_length=20, choices=ProcessingStatus.choices, default=ProcessingStatus.PENDING)
+    processing_status = models.CharField(
+        max_length=20,
+        choices=ProcessingStatus.choices,
+        default=ProcessingStatus.PENDING)
 
     class Meta:
         ordering = ['-created_at']

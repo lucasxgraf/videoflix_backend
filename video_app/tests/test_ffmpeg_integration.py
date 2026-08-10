@@ -7,6 +7,7 @@ from video_app.ffmpeg import run_ffmpeg_hls
 
 SAMPLE_VIDEO_PATH = Path(__file__).parent / 'fixtures' / 'sample.mp4'
 
+
 class RunFfmpegHlsIntegrationTest(SimpleTestCase):
     def test_creates_valid_hls_output(self):
         output_dir = tempfile.mkdtemp()

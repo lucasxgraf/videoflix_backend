@@ -11,6 +11,7 @@ from unittest.mock import patch
 from auth_app.models import CustomUser
 from auth_app.tasks import send_activation_email
 
+
 class RegistrationTestCase(APITestCase):
     def setUp(self):
         self.user_data = {
@@ -18,9 +19,9 @@ class RegistrationTestCase(APITestCase):
             'password': 'securepassword',
             'confirmed_password': 'securepassword'
         }
-        
+
         self.url = reverse('register')
-        
+
     def test_registration_success(self):
         response = self.client.post(self.url, self.user_data, format='json')
         user = CustomUser.objects.get()
@@ -30,11 +31,11 @@ class RegistrationTestCase(APITestCase):
         self.assertEqual(user.email, self.user_data['email'])
         self.assertFalse(user.is_active)
         self.assertTrue(user.check_password(self.user_data['password']))
-        
+
         self.assertIn("token", response.data)
         self.assertIn("user", response.data)
         self.assertEqual(response.data["user"]["email"], self.user_data["email"])
-    
+
     def test_register_password_mismatch(self):
         user_data = self.user_data.copy()
         user_data['confirmed_password'] = 'invalid_password'
@@ -42,7 +43,7 @@ class RegistrationTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(CustomUser.objects.count(), 0)
-        
+
     def test_register_email_already_exists(self):
         CustomUser.objects.create_user(email='user@example.com', password='securepassword')
 
@@ -51,7 +52,7 @@ class RegistrationTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(CustomUser.objects.count(), 1)
-        
+
     def test_register_weak_password(self):
         user_data = self.user_data.copy()
         user_data['password'] = '123'
@@ -60,11 +61,11 @@ class RegistrationTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(CustomUser.objects.count(), 0)
-        
+
     @patch('auth_app.api.views.django_rq.get_queue')
     def test_registration_enqueues_activation_email(self, mock_get_queue):
         mock_queue = mock_get_queue.return_value
-        response = self.client.post(self.url, self.user_data, format='json')
+        self.client.post(self.url, self.user_data, format='json')
 
         user = CustomUser.objects.get()
         expected_uidb64 = urlsafe_base64_encode(force_bytes(user.pk))

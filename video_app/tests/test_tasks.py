@@ -24,13 +24,13 @@ class ConvertVideoToHlsTest(TestCase):
     def test_status_is_done_after_successful_conversion(self, mock_run_ffmpeg):
         convert_video_to_hls(self.video.id)
         self.video.refresh_from_db()
-        
+
         self.assertEqual(self.video.processing_status, Video.ProcessingStatus.DONE)
 
     @patch('video_app.tasks.run_ffmpeg_hls')
     def test_run_ffmpeg_called_three_times(self, mock_run_ffmpeg):
         convert_video_to_hls(self.video.id)
-        
+
         self.assertEqual(mock_run_ffmpeg.call_count, 3)
 
     @patch('video_app.tasks.run_ffmpeg_hls')
@@ -40,19 +40,19 @@ class ConvertVideoToHlsTest(TestCase):
 
         self.video.refresh_from_db()
         self.assertEqual(self.video.processing_status, Video.ProcessingStatus.FAILED)
-        
+
     @patch('video_app.tasks.run_ffmpeg_hls')
     def test_correct_resolution_height_and_width(self, mock_run_ffmpeg):
         convert_video_to_hls(self.video.id)
-        
+
         first_call = mock_run_ffmpeg.call_args_list[0]
         self.assertEqual(first_call.args[2], 854)
         self.assertEqual(first_call.args[3], 480)
-        
+
         second_call = mock_run_ffmpeg.call_args_list[1]
         self.assertEqual(second_call.args[2], 1280)
         self.assertEqual(second_call.args[3], 720)
-        
+
         third_call = mock_run_ffmpeg.call_args_list[2]
         self.assertEqual(third_call.args[2], 1920)
         self.assertEqual(third_call.args[3], 1080)

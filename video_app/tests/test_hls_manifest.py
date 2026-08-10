@@ -19,9 +19,12 @@ class HlsManifestTest(APITestCase):
             'email': 'user@example.com',
             'password': 'securepassword',
         }
-        self.user = CustomUser.objects.create_user(email=self.user_data['email'], password=self.user_data['password'], is_active=True)
+        self.user = CustomUser.objects.create_user(
+            email=self.user_data['email'],
+            password=self.user_data['password'],
+            is_active=True)
         self.client.force_authenticate(self.user)
-        
+
         video_file = SimpleUploadedFile(
             "test_video.mp4", b"fake video content", content_type="video/mp4"
         )
@@ -31,9 +34,9 @@ class HlsManifestTest(APITestCase):
             original_video_file=video_file,
         )
         self.resolution = '480p'
-        
+
         self.url = reverse('hls-manifest', kwargs={'movie_id': self.video.id, 'resolution': self.resolution})
-    
+
     def test_hls_manifest_success(self):
         self.video.processing_status = Video.ProcessingStatus.DONE
         self.video.save()
@@ -42,40 +45,37 @@ class HlsManifestTest(APITestCase):
         output_dir.mkdir(parents=True, exist_ok=True)
         manifest_path = output_dir / 'index.m3u8'
         manifest_path.write_text('#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-ENDLIST\n')
-        
+
         response = self.client.get(self.url)
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response['Content-Type'], 'application/vnd.apple.mpegurl')
-        
+
         content = b"".join(response.streaming_content)
         self.assertIn(b'#EXTM3U', content)
-    
+
     def test_hls_manifest_unauthenticated(self):
         self.client.force_authenticate(user=None)
         response = self.client.get(self.url)
-        
+
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-    
+
     def test_hls_manifest_video_dont_exist(self):
         url = reverse('hls-manifest', kwargs={'movie_id': 9999, 'resolution': self.resolution})
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-    
+
     def test_hls_manifest_wrong_processing_status(self):
         response = self.client.get(self.url)
-        
+
         # Default status is PENDING
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-    
+
     def test_hls_manifest_file_missing(self):
         self.video.processing_status = Video.ProcessingStatus.DONE
         self.video.save()
-        
+
         response = self.client.get(self.url)
-        
+
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        
-        
-    

@@ -16,4 +16,3 @@ class VideoSerializer(serializers.ModelSerializer):
             return thumbnail_url
         else:
             return None
-        

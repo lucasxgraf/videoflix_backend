@@ -1,13 +1,14 @@
 from django.test import TestCase
 from auth_app.models import CustomUser
 
+
 class CustomUserModelTest(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(
             email="user@example.com",
             password="securepassword",
         )
-    
+
     def test_create_user_sets_email(self):
         self.assertEqual(self.user.email, "user@example.com")
 

@@ -12,7 +12,15 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 from auth_app.tasks import send_activation_email, send_password_reset_email
 from .serializers import RegistrationSerializer, PasswordResetSerializer, PasswordConfirmSerializer
-from .utils import build_login_response_data, set_auth_cookies, blacklist_refresh_token, clear_auth_cookies, generate_new_access_token, set_access_cookie
+from .utils import (
+    build_login_response_data,
+    set_auth_cookies,
+    blacklist_refresh_token,
+    clear_auth_cookies,
+    generate_new_access_token,
+    set_access_cookie
+)
+
 
 class RegistrationView(generics.GenericAPIView):
     permission_classes = []
@@ -25,38 +33,40 @@ class RegistrationView(generics.GenericAPIView):
             user = serializer.instance
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             token = PasswordResetTokenGenerator().make_token(user)
-            
+
             queue = django_rq.get_queue('default')
             queue.enqueue(send_activation_email, user.id, uidb64, token)
-            
-            return Response({"user": 
-                { "id": user.id, "email": user.email },
-                "token": token},
-                status=status.HTTP_201_CREATED)
+
+            return Response({"user":
+                             {"id": user.id, "email": user.email},
+                             "token": token},
+                            status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ActivationView(generics.GenericAPIView):
     permission_classes = []
-    
+
     def get(self, request, uidb64, token):
         CustomUser = get_user_model()
-        
+
         try:
             uid = urlsafe_base64_decode(force_str(uidb64)).decode()
             user = CustomUser.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
             user = None
-        
+
         if user is not None and user.is_active:
             return Response({"error": "Account already activated."}, status=status.HTTP_400_BAD_REQUEST)
-                
+
         if user is not None and PasswordResetTokenGenerator().check_token(user, token):
             user.is_active = True
             user.save()
             return Response({"message": "Account successfully activated."}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Account activation failed."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class CookieTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
@@ -71,7 +81,8 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             serializer.validated_data['refresh'])
 
         return response
-    
+
+
 class LogoutView(generics.GenericAPIView):
     permission_classes = []
 
@@ -95,6 +106,7 @@ class LogoutView(generics.GenericAPIView):
 
         return response
 
+
 class CookieTokenRefreshView(generics.GenericAPIView):
     permission_classes = []
 
@@ -110,46 +122,49 @@ class CookieTokenRefreshView(generics.GenericAPIView):
             return Response({"detail": "Invalid refresh token."},
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        response = Response({"detail": "Token refreshed", "access": new_access_token}, status=status.HTTP_200_OK)
+        response = Response({"detail": "Token refreshed",
+                            "access": new_access_token}, status=status.HTTP_200_OK)
         set_access_cookie(response, new_access_token)
         return response
-    
+
+
 class PasswordResetView(generics.GenericAPIView):
     permission_classes = []
     serializer_class = PasswordResetSerializer
-    
+
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         email = serializer.validated_data['email']
         CustomUser = get_user_model()
-        
+
         try:
             user = CustomUser.objects.get(email=email)
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             token = PasswordResetTokenGenerator().make_token(user)
-            
+
             queue = django_rq.get_queue('default')
             queue.enqueue(send_password_reset_email, user.id, uidb64, token)
-            
+
         except CustomUser.DoesNotExist:
             pass
-        
+
         return Response({"detail": "An email has been sent to reset your password."}, status=status.HTTP_200_OK)
+
 
 class PasswordConfirmView(generics.GenericAPIView):
     permission_classes = []
-    
+
     def post(self, request, uidb64, token, *args, **kwargs):
         CustomUser = get_user_model()
-        
+
         try:
             uid = urlsafe_base64_decode(force_str(uidb64)).decode()
             user = CustomUser.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
             user = None
-            
+
         if user is not None and PasswordResetTokenGenerator().check_token(user, token):
             serializer = PasswordConfirmSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)

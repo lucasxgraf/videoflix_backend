@@ -5,6 +5,7 @@ from rest_framework.test import APITestCase
 
 from auth_app.models import CustomUser
 
+
 class TokenRefreshViewTests(APITestCase):
     def setUp(self):
         self.user_data = {
@@ -12,7 +13,10 @@ class TokenRefreshViewTests(APITestCase):
             'password': 'securepassword',
         }
 
-        CustomUser.objects.create_user(email=self.user_data['email'], password=self.user_data['password'], is_active=True)
+        CustomUser.objects.create_user(
+            email=self.user_data['email'],
+            password=self.user_data['password'],
+            is_active=True)
 
         self.client.post(reverse('login'), self.user_data, format='json')
 

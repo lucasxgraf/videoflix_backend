@@ -19,9 +19,11 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=255)),
                 ('description', models.TextField(blank=True)),
                 ('thumbnail', models.ImageField(blank=True, null=True, upload_to='thumbnail/')),
-                ('category', models.CharField(choices=[('action', 'Action'), ('comedy', 'Comedy'), ('drama', 'Drama'), ('romance', 'Romance'), ('horror', 'Horror'), ('sci-fi', 'Sci-Fi'), ('documentary', 'Documentary'), ('animation', 'Animation')], max_length=20)),
+                ('category', models.CharField(choices=[('action', 'Action'), ('comedy', 'Comedy'), ('drama', 'Drama'), ('romance', 'Romance'), (
+                    'horror', 'Horror'), ('sci-fi', 'Sci-Fi'), ('documentary', 'Documentary'), ('animation', 'Animation')], max_length=20)),
                 ('original_video_file', models.FileField(upload_to='videos/')),
-                ('processing_status', models.CharField(choices=[('pending', 'Pending'), ('processing', 'Processing'), ('done', 'Done'), ('failed', 'Failed')], default='pending', max_length=20)),
+                ('processing_status', models.CharField(choices=[
+                 ('pending', 'Pending'), ('processing', 'Processing'), ('done', 'Done'), ('failed', 'Failed')], default='pending', max_length=20)),
             ],
             options={
                 'ordering': ['-created_at'],
