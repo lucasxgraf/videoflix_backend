@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.exceptions import TokenError
 
-
 from auth_app.tasks import send_activation_email, send_password_reset_email
 from .serializers import RegistrationSerializer, PasswordResetSerializer, PasswordConfirmSerializer
 from .utils import (
@@ -18,7 +17,10 @@ from .utils import (
     blacklist_refresh_token,
     clear_auth_cookies,
     generate_new_access_token,
-    set_access_cookie
+    set_access_cookie,
+    enqueue_token_email,
+    get_user_from_uidb64,
+    get_refresh_token_or_error,
 )
 
 
@@ -31,16 +33,10 @@ class RegistrationView(generics.GenericAPIView):
         if serializer.is_valid():
             serializer.save()
             user = serializer.instance
-            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-            token = PasswordResetTokenGenerator().make_token(user)
+            uidb64, token = enqueue_token_email(send_activation_email, user)
 
-            queue = django_rq.get_queue('default')
-            queue.enqueue(send_activation_email, user.id, uidb64, token)
-
-            return Response({"user":
-                             {"id": user.id, "email": user.email},
-                             "token": token},
-                            status=status.HTTP_201_CREATED)
+            return Response({"user": {"id": user.id, "email": user.email}, "token": token},
+                             status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -49,13 +45,7 @@ class ActivationView(generics.GenericAPIView):
     permission_classes = []
 
     def get(self, request, uidb64, token):
-        CustomUser = get_user_model()
-
-        try:
-            uid = urlsafe_base64_decode(force_str(uidb64)).decode()
-            user = CustomUser.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
-            user = None
+        user = get_user_from_uidb64(uidb64)
 
         if user is not None and user.is_active:
             return Response({"error": "Account already activated."}, status=status.HTTP_400_BAD_REQUEST)
@@ -87,11 +77,9 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = []
 
     def post(self, request, *args, **kwargs):
-        refresh_token_string = request.COOKIES.get('refresh_token')
-
-        if not refresh_token_string:
-            return Response({"detail": "Refresh token not provided."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        refresh_token_string, error_response = get_refresh_token_or_error(request)
+        if error_response:
+            return error_response
 
         try:
             blacklist_refresh_token(refresh_token_string)
@@ -111,11 +99,10 @@ class CookieTokenRefreshView(generics.GenericAPIView):
     permission_classes = []
 
     def post(self, request, *args, **kwargs):
-        refresh_token_string = request.COOKIES.get('refresh_token')
-
-        if not refresh_token_string:
-            return Response({"detail": "Refresh token not provided."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        refresh_token_string, error_response = get_refresh_token_or_error(request)
+        if error_response:
+            return error_response
+        
         try:
             new_access_token = generate_new_access_token(refresh_token_string)
         except TokenError:
@@ -141,12 +128,7 @@ class PasswordResetView(generics.GenericAPIView):
 
         try:
             user = CustomUser.objects.get(email=email)
-            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-            token = PasswordResetTokenGenerator().make_token(user)
-
-            queue = django_rq.get_queue('default')
-            queue.enqueue(send_password_reset_email, user.id, uidb64, token)
-
+            enqueue_token_email(send_password_reset_email, user)
         except CustomUser.DoesNotExist:
             pass
 
@@ -157,13 +139,7 @@ class PasswordConfirmView(generics.GenericAPIView):
     permission_classes = []
 
     def post(self, request, uidb64, token, *args, **kwargs):
-        CustomUser = get_user_model()
-
-        try:
-            uid = urlsafe_base64_decode(force_str(uidb64)).decode()
-            user = CustomUser.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
-            user = None
+        user = get_user_from_uidb64(uidb64)
 
         if user is not None and PasswordResetTokenGenerator().check_token(user, token):
             serializer = PasswordConfirmSerializer(data=request.data)
