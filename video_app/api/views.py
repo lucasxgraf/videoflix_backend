@@ -36,3 +36,23 @@ class HlsManifestView(generics.GenericAPIView):
             return FileResponse(open(path, 'rb'), content_type='application/vnd.apple.mpegurl')
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
+        
+class HlsSegmentView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, movie_id, resolution, segment):
+        if '..' in segment or '/' in segment:
+            return Response(status=status.HTTP_404_NOT_FOUND) 
+        
+        try:
+            video = Video.objects.get(pk=movie_id)
+        except Video.DoesNotExist:
+            video = None
+    
+        if video is not None and video.processing_status == Video.ProcessingStatus.DONE:    
+            path = hls_output_dir(movie_id, resolution) / segment
+            if not path.exists():
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            return FileResponse(open(path, 'rb'), content_type='video/MP2T')
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
