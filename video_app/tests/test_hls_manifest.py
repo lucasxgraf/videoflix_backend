@@ -69,7 +69,6 @@ class HlsManifestTest(APITestCase):
     def test_hls_manifest_wrong_processing_status(self):
         response = self.client.get(self.url)
 
-        # Default status is PENDING
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_hls_manifest_file_missing(self):
