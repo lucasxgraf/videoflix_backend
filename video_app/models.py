@@ -2,6 +2,12 @@ from django.db import models
 
 
 class Video(models.Model):
+    """
+    A single uploaded movie, its metadata and its HLS conversion state.
+    The original file is uploaded via the admin; HLS output paths are derived
+    from the video id and resolution, not stored on the model.
+    """
+
     class Category(models.TextChoices):
         ACTION = 'action', 'Action'
         COMEDY = 'comedy', 'Comedy'

@@ -25,9 +25,15 @@ from .utils import (
 
 
 class RegistrationView(generics.GenericAPIView):
+    """Registers a new, inactive user and enqueues an activation email."""
+
     permission_classes = []
 
     def post(self, request, *args, **kwargs):
+        """
+        Validate and save the new user, then send the activation email
+        in the background via RQ.
+        """
         serializer = RegistrationSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -42,9 +48,15 @@ class RegistrationView(generics.GenericAPIView):
 
 
 class ActivationView(generics.GenericAPIView):
+    """Activates a user account via the link sent in the activation email."""
+
     permission_classes = []
 
     def get(self, request, uidb64, token):
+        """
+        Validate the uidb64/token pair and activate the account.
+        Fails if the account is already active or the token is invalid/expired.
+        """
         user = get_user_from_uidb64(uidb64)
 
         if user is not None and user.is_active:
@@ -59,7 +71,10 @@ class ActivationView(generics.GenericAPIView):
 
 
 class CookieTokenObtainPairView(TokenObtainPairView):
+    """Logs the user in and sets the JWT access/refresh tokens as HttpOnly cookies."""
+
     def post(self, request, *args, **kwargs):
+        """Validate credentials and issue the auth cookies on success."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -74,9 +89,15 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
 
 class LogoutView(generics.GenericAPIView):
+    """Logs the user out by blacklisting the refresh token and clearing the auth cookies."""
+
     permission_classes = []
 
     def post(self, request, *args, **kwargs):
+        """
+        Blacklist the refresh token from the cookie and remove both auth cookies.
+        Requires no valid access token, only a refresh token cookie.
+        """
         refresh_token_string, error_response = get_refresh_token_or_error(request)
         if error_response:
             return error_response
@@ -96,9 +117,12 @@ class LogoutView(generics.GenericAPIView):
 
 
 class CookieTokenRefreshView(generics.GenericAPIView):
+    """Issues a new access token cookie from a valid refresh token cookie."""
+
     permission_classes = []
 
     def post(self, request, *args, **kwargs):
+        """Read the refresh token cookie and set a refreshed access token cookie."""
         refresh_token_string, error_response = get_refresh_token_or_error(request)
         if error_response:
             return error_response
@@ -116,10 +140,17 @@ class CookieTokenRefreshView(generics.GenericAPIView):
 
 
 class PasswordResetView(generics.GenericAPIView):
+    """Requests a password reset email for the given address, if an account exists."""
+
     permission_classes = []
     serializer_class = PasswordResetSerializer
 
     def post(self, request, *args, **kwargs):
+        """
+        Enqueue a reset email if a user with the given email exists.
+        Always returns the same response, regardless of whether the account exists,
+        to avoid leaking account existence.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -136,9 +167,15 @@ class PasswordResetView(generics.GenericAPIView):
 
 
 class PasswordConfirmView(generics.GenericAPIView):
+    """Sets a new password via the link sent in the password reset email."""
+
     permission_classes = []
 
     def post(self, request, uidb64, token, *args, **kwargs):
+        """
+        Validate the uidb64/token pair and set the new password.
+        The token becomes invalid afterwards since it is derived from the password hash.
+        """
         user = get_user_from_uidb64(uidb64)
 
         if user is not None and PasswordResetTokenGenerator().check_token(user, token):

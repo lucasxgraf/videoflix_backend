@@ -6,6 +6,10 @@ from video_app.utils import hls_output_dir
 
 
 def convert_video_to_hls(video_id):
+    """
+    Convert the given video to HLS in all target resolutions and update
+    its processing_status accordingly (processing -> done/failed).
+    """
     video = Video.objects.get(pk=video_id)
 
     video.processing_status = Video.ProcessingStatus.PROCESSING
@@ -21,6 +25,7 @@ def convert_video_to_hls(video_id):
 
 
 def _convert_all_resolutions(video):
+    """Run the ffmpeg HLS conversion for every target resolution."""
     input_path = video.original_video_file.path
     
     resolutions = [

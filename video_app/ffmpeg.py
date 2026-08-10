@@ -2,11 +2,17 @@ import subprocess
 
 
 def run_ffmpeg_hls(input_path, output_dir, width, height):
+    """
+    Convert input_path to an HLS rendition at the given resolution,
+    writing index.m3u8 and .ts segments into output_dir.
+    Raises CalledProcessError if ffmpeg exits with a non-zero status.
+    """
     command = _build_ffmpeg_command(input_path, output_dir, width, height)
     subprocess.run(command, check=True, capture_output=True, text=True)
 
 
 def _build_ffmpeg_command(input_path, output_dir, width, height):
+    """Build the ffmpeg CLI argument list for a single-resolution HLS conversion."""
     return [
         'ffmpeg',
         '-i', input_path,

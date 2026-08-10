@@ -5,6 +5,10 @@ from django.core.mail import EmailMultiAlternatives
 
 
 def send_activation_email(user_id, uidb64, token):
+    """
+    Send the account activation email to the given user.
+    Runs as an RQ background job, contains both an HTML and a plain-text version.
+    """
     user = get_user_model().objects.get(pk=user_id)
 
     username = user.email.split('@')[0]
@@ -26,6 +30,10 @@ def send_activation_email(user_id, uidb64, token):
 
 
 def send_password_reset_email(user_id, uidb64, token):
+    """
+    Send the password reset email to the given user.
+    Runs as an RQ background job, contains both an HTML and a plain-text version.
+    """
     user = get_user_model().objects.get(pk=user_id)
 
     username = user.email.split('@')[0]
@@ -49,6 +57,10 @@ def send_password_reset_email(user_id, uidb64, token):
 
 
 def _send_html_email(user, subject, plain_text_message, template_name, context):
+    """
+    Render the given template as HTML and send it as an alternative
+    alongside the provided plain-text body.
+    """
     html_message = render_to_string(template_name, context)
     email = EmailMultiAlternatives(subject, plain_text_message, settings.DEFAULT_FROM_EMAIL, [user.email])
     email.attach_alternative(html_message, "text/html")

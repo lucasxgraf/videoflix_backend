@@ -4,6 +4,11 @@ from .models import CustomUser
 
 
 class CustomUserAdmin(UserAdmin):
+    """
+    Admin config for CustomUser.
+    Adapted from Django's built-in UserAdmin to use email instead of username.
+    """
+
     ordering = ['email']
     list_display = ['email', 'is_staff', 'is_active']
     search_fields = ['email']

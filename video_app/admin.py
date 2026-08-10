@@ -4,6 +4,8 @@ from .models import Video
 
 @admin.register(Video)
 class VideoAdmin(admin.ModelAdmin):
+    """Admin config for Video."""
+
     list_display = ['id', 'title', 'category', 'processing_status', 'created_at']
     list_filter = ['category', 'processing_status']
     search_fields = ['title', 'description']
