@@ -1,6 +1,23 @@
 import subprocess
 
 
+def extract_thumbnail(input_path, output_path, second=1):
+    """
+    Extract a single frame from input_path at the given second and
+    save it as a JPEG at output_path.
+    Raises CalledProcessError if ffmpeg exits with a non-zero status.
+    """
+    command = [
+        'ffmpeg',
+        '-y',
+        '-ss', str(second),
+        '-i', input_path,
+        '-vframes', '1',
+        output_path,
+    ]
+    subprocess.run(command, check=True, capture_output=True, text=True)
+
+
 def run_ffmpeg_hls(input_path, output_dir, width, height):
     """
     Convert input_path to an HLS rendition at the given resolution,
