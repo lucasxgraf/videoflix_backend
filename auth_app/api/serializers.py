@@ -23,19 +23,20 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Ensure password and confirmed_password match and satisfy
-        Django's configured password strength rules.
+        Ensure password and confirmed_password match, satisfy Django's
+        configured password strength rules, and that the email isn't
+        already registered. The email check is raised as a non-field
+        error so the response shape doesn't reveal which check failed,
+        preventing account enumeration via the given email address.
         """
         if data['password'] != data['confirmed_password']:
             raise serializers.ValidationError("Passwords do not match.")
         validate_password(data['password'])
+        
+        if CustomUser.objects.filter(email=data['email']).exists():
+            raise serializers.ValidationError(
+                'Please check your input and try again.')
         return data
-
-    def validate_email(self, value):
-        """Reject the email if it is already registered."""
-        if CustomUser.objects.filter(email=value).exists():
-            raise serializers.ValidationError('Email already exists')
-        return value
 
     def create(self, validated_data):
         """Create the user via CustomUserManager, discarding the confirmation field."""
