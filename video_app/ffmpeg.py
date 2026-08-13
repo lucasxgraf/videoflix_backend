@@ -33,7 +33,7 @@ def _build_ffmpeg_command(input_path, output_dir, width, height):
     return [
         'ffmpeg',
         '-i', input_path,
-        '-vf', f'scale=w={width}:h={height}:force_original_aspect_ratio=decrease',
+        '-vf', f'scale=w={width}:h={height}:force_original_aspect_ratio=decrease:force_divisible_by=2',
         '-pix_fmt', 'yuv420p',
         '-c:a', 'aac',
         '-ar', '48000',
