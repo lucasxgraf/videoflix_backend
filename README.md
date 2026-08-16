@@ -94,7 +94,7 @@ The frontend expects the backend at `http://127.0.0.1:8000`. If you run the fron
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `register/` | Register a new (inactive) user, sends an activation email |
-| GET | `activate/<uidb64>/<token>/` | Activate the account via the link from the activation email |
+| GET | `activate/<uidb64>/<token>/` | Activate the account (called by the frontend's activation page) |
 | POST | `login/` | Log in, sets `access_token` / `refresh_token` HttpOnly cookies |
 | POST | `logout/` | Blacklist the refresh token and clear auth cookies |
 | POST | `token/refresh/` | Issue a new access token cookie from the refresh token cookie |
@@ -154,4 +154,5 @@ docker compose exec web python manage.py test
 ## Notes
 
 - `DEBUG=True` and `FRONTEND_URL`/`BACKEND_URL` pointing at `localhost` are intended for local grading/testing, where the reviewer runs the whole stack and opens the frontend on the same machine. For a real deployment, set `DEBUG=False`, `ALLOWED_HOSTS`/`CORS_ALLOWED_ORIGINS`/`CSRF_TRUSTED_ORIGINS` to the real domains, and serve `/media/` via a webserver in front of Django (Django only serves it itself while `DEBUG=True`).
+- Keep `DEBUG=True` for local HTTP testing: the `access_token`/`refresh_token` cookies are only marked `Secure` when `DEBUG=False`, since browsers silently refuse to store `Secure` cookies over plain HTTP (no login session would ever persist locally otherwise). This is only safe because production deployments (`DEBUG=False`) are expected to run behind HTTPS.
 - The email logo is embedded directly into outgoing emails (not linked as a remote image), so it displays correctly even in clients like Gmail that fetch remote images through their own proxy and can't reach a `localhost` backend.
