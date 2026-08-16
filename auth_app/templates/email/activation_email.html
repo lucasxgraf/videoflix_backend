@@ -1,19 +1,39 @@
 <html>
 
-<body>
-    <div style="display: flex; justify-content: center;">
-        <img src="cid:{{ logo_cid }}" alt="logo icon"/>
-    </div>
-    <p>Dear <strong>{{ username }}</strong>,</p>
-    <p>Thank you for registering with <strong>Videoflix</strong>. To complete your registration and verify your email address, please click the link below:</p>
-    <a href="{{ activation_link }}"
-        style="background:#1a23dd;color:#fff;padding:20px 40px;border-radius:40px;text-decoration:none;font-weight:bold;display:inline-block;">
-        Activate account
-    </a>
-    <p>If you did not create an account with us, please disregard this email.</p>
-    <p>Best regards, <br>
-        Your Videoflix Team!
-    </p>
+<body style="margin:0;padding:0;background:#f4f4f7;font-family:'DM Sans',Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:40px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;padding:40px;max-width:600px;">
+                    <tr>
+                        <td align="center" style="padding-bottom:32px;">
+                            <img src="cid:{{ logo_cid }}" alt="Videoflix" width="180" style="display:block;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="color:#1a1a2e;font-size:16px;line-height:1.6;">
+                            <p style="margin:0 0 16px;">Dear <strong>{{ username }}</strong>,</p>
+                            <p style="margin:0 0 24px;">Thank you for registering with <strong>Videoflix</strong>. To complete your registration and verify your email address, please click the button below:</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding-bottom:24px;">
+                            <a href="{{ activation_link }}"
+                                style="background:#1a23dd;color:#fff;padding:16px 40px;border-radius:40px;text-decoration:none;font-weight:bold;font-size:16px;display:inline-block;">
+                                Activate account
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="color:#1a1a2e;font-size:16px;line-height:1.6;">
+                            <p style="margin:0 0 24px;">If you did not create an account with us, please disregard this email.</p>
+                            <p style="margin:0;">Best regards,<br>Your Videoflix Team!</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>
