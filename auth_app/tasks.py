@@ -17,7 +17,7 @@ def send_activation_email(user_id, uidb64, token):
     user = get_user_model().objects.get(pk=user_id)
 
     username = user.email.split('@')[0]
-    activation_link = f'{settings.FRONTEND_URL}/activate/{uidb64}/{token}/'
+    activation_link = f'{settings.FRONTEND_URL}/pages/auth/activate.html?uid={uidb64}&token={token}'
 
     subject = 'Videoflix - Activate Your Account'
     plain_text_message = (
@@ -41,7 +41,7 @@ def send_password_reset_email(user_id, uidb64, token):
     user = get_user_model().objects.get(pk=user_id)
 
     username = user.email.split('@')[0]
-    password_reset_link = f'{settings.FRONTEND_URL}/reset-password/{uidb64}/{token}/'
+    password_reset_link = f'{settings.FRONTEND_URL}/pages/auth/confirm_password.html?uid={uidb64}&token={token}'
     password_reset_link_valid_hours = settings.PASSWORD_RESET_TIMEOUT // 3600
 
     subject = 'Videoflix - Reset Your Password'

@@ -100,13 +100,16 @@ class LogoutView(generics.GenericAPIView):
         """
         refresh_token_string, error_response = get_refresh_token_or_error(request)
         if error_response:
+            clear_auth_cookies(error_response)
             return error_response
 
         try:
             blacklist_refresh_token(refresh_token_string)
         except TokenError:
-            return Response({"detail": "Invalid refresh token."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            response = Response({"detail": "Invalid refresh token."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            clear_auth_cookies(response)
+            return response
 
         detail = "Logout successful! All Tokens will be deleted. Refresh token is now invalid."
         response = Response({"detail": detail}, status=status.HTTP_200_OK)

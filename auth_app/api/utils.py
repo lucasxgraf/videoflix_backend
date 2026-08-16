@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -33,8 +34,12 @@ def set_auth_cookies(response, access, refresh):
 
 
 def _set_cookie(response, key, value):
-    """Set a single HttpOnly, secure cookie with SameSite=Lax."""
-    response.set_cookie(key=key, value=value, httponly=True, secure=True, samesite='Lax')
+    """
+    Set a single HttpOnly cookie with SameSite=Lax.
+    Marked Secure outside of DEBUG only - browsers refuse to store Secure
+    cookies over plain HTTP, which is how the app runs locally in DEBUG mode.
+    """
+    response.set_cookie(key=key, value=value, httponly=True, secure=not settings.DEBUG, samesite='Lax')
 
 
 def set_access_cookie(response, new_access_token):
