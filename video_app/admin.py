@@ -9,3 +9,4 @@ class VideoAdmin(admin.ModelAdmin):
     list_display = ['id', 'title', 'category', 'processing_status', 'created_at']
     list_filter = ['category', 'processing_status']
     search_fields = ['title', 'description']
+    readonly_fields = ['processing_status']
