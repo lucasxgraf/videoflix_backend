@@ -47,7 +47,12 @@ Open `.env` and fill in your own values. At minimum, set real values for `DB_NAM
 `FRONTEND_URL` and `BACKEND_URL` default to `http://localhost:5500` and `http://localhost:8000`. Leave them as-is if you run the frontend via a local Live Server on port 5500 — the activation link, password-reset link, and email logo are all built from these two values.
 
 ```bash
-# 3. Build and start all containers (web, db, redis)
+# 3. On macOS/Linux, make the entrypoint script executable (only needed once)
+chmod +x backend.entrypoint.sh
+```
+
+```bash
+# 4. Build and start all containers (web, db, redis)
 docker compose up --build
 ```
 
